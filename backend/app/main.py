@@ -6,12 +6,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import init_db
-from .routers import disputes
+from .routers import demo, disputes
+from .services.seed import seed_demos
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    seed_demos()
     yield
 
 
@@ -30,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(disputes.router)
+app.include_router(demo.router)
 
 
 @app.get("/api/health")

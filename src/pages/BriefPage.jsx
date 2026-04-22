@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 const fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const serif = 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
@@ -53,9 +53,12 @@ const formatDate = (iso) => {
   }
 };
 
-const BriefPage = () => {
-  const { disputeId } = useParams();
+const BriefPage = ({ isDemo: isDemoProp = false }) => {
+  const { disputeId, demoId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDemo = isDemoProp || location.pathname.startsWith('/demo/');
+  const id = isDemo ? demoId : disputeId;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
@@ -64,7 +67,8 @@ const BriefPage = () => {
     let mounted = true;
     const load = async () => {
       try {
-        const res = await fetch(`/api/disputes/${disputeId}`);
+        const endpoint = isDemo ? `/api/demo/${id}` : `/api/disputes/${id}`;
+        const res = await fetch(endpoint);
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const j = await res.json();
         if (mounted) {
@@ -80,7 +84,7 @@ const BriefPage = () => {
     };
     load();
     return () => { mounted = false; };
-  }, [disputeId]);
+  }, [id, isDemo]);
 
   if (loading) {
     return (
@@ -136,13 +140,15 @@ const BriefPage = () => {
       <TopBar onExit={() => navigate('/')} onPrint={() => window.print()} />
 
       <div style={containerStyle}>
+        {isDemo && <DemoBanner onStart={() => navigate('/start')} />}
+
         {/* Header block */}
         <div style={{ marginBottom: '28px' }}>
           <div style={{
             fontSize: '11px', letterSpacing: '1.8px', textTransform: 'uppercase',
             fontWeight: 700, color: '#0A84FF', marginBottom: '14px',
           }}>
-            Private Brief
+            {isDemo ? 'Example Brief' : 'Private Brief'}
           </div>
           <h1 style={{
             fontFamily: serif, fontSize: 'clamp(28px, 4vw, 40px)',
@@ -280,6 +286,36 @@ const BriefPage = () => {
 };
 
 // ---- helpers ----
+
+const DemoBanner = ({ onStart }) => (
+  <div style={{
+    backgroundColor: 'rgba(255, 159, 10, 0.08)',
+    border: '1px solid rgba(255, 159, 10, 0.35)',
+    borderLeft: '3px solid #FF9F0A',
+    borderRadius: '10px',
+    padding: '16px 20px',
+    marginBottom: '28px',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: '20px', flexWrap: 'wrap',
+  }}>
+    <div style={{ fontSize: '13px', color: '#EBEBF5', lineHeight: 1.55, maxWidth: '600px' }}>
+      <strong style={{ color: '#FFB340' }}>This is an example brief</strong> — based on a
+      fictional dispute used to demonstrate Courtless. Your real audit will be based on
+      your own documents.
+    </div>
+    <button
+      onClick={onStart}
+      style={{
+        padding: '9px 16px', borderRadius: '6px',
+        backgroundColor: '#0A84FF', color: 'white', border: 'none',
+        fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      Start my audit →
+    </button>
+  </div>
+);
 
 const Section = ({ eyebrow, title, children }) => (
   <div style={panelStyle}>

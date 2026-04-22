@@ -90,6 +90,7 @@ const SplashPage = () => {
   const [finalCtaHover, setFinalCtaHover] = useState(false);
 
   const startAudit = () => navigate('/start');
+  const seeDemo = () => navigate('/demo');
 
   const primaryCtaStyle = (hovered) => ({
     display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -156,6 +157,18 @@ const SplashPage = () => {
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
               </svg>
+            </button>
+            <button
+              onClick={seeDemo}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: 'none', border: 'none', color: 'rgba(235, 235, 245, 0.85)',
+                padding: '10px 8px', fontSize: '13px', fontWeight: 500,
+                cursor: 'pointer', fontFamily, textDecoration: 'underline',
+                textDecorationColor: 'rgba(235, 235, 245, 0.25)', textUnderlineOffset: '4px',
+              }}
+            >
+              See a demo brief →
             </button>
             <div style={{ fontSize: '12px', color: 'rgba(235, 235, 245, 0.4)', marginLeft: '8px' }}>
               Free first audit · Takes 10 minutes · Not legal advice
@@ -341,18 +354,31 @@ const SplashPage = () => {
           <p style={{ ...sub, margin: '0 auto 36px', textAlign: 'center' }}>
             Free first audit. Ten minutes. No sign-up hoops. A brief in your inbox at the end.
           </p>
-          <button
-            onClick={startAudit}
-            onMouseEnter={() => setFinalCtaHover(true)}
-            onMouseLeave={() => setFinalCtaHover(false)}
-            style={primaryCtaStyle(finalCtaHover)}
-          >
-            Start your audit
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </button>
+          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+            <button
+              onClick={startAudit}
+              onMouseEnter={() => setFinalCtaHover(true)}
+              onMouseLeave={() => setFinalCtaHover(false)}
+              style={primaryCtaStyle(finalCtaHover)}
+            >
+              Start your audit
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+            <button
+              onClick={seeDemo}
+              style={{
+                background: 'none', border: 'none', color: 'rgba(235, 235, 245, 0.7)',
+                fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily,
+                textDecoration: 'underline', textDecorationColor: 'rgba(235, 235, 245, 0.25)',
+                textUnderlineOffset: '4px',
+              }}
+            >
+              Not ready? See a demo brief →
+            </button>
+          </div>
         </div>
       </section>
 
