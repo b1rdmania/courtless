@@ -139,11 +139,11 @@ const SplashPage = () => {
         <div style={inner}>
           <div style={eyebrow}>Disputes Without Courts</div>
           <h1 style={h1}>
-            The reality check on your dispute.<br />
-            Before the lawyers get involved.
+            Judge Judy. But with<br />
+            game theory and AI.
           </h1>
           <p style={{ ...sub, marginBottom: '40px' }}>
-            Courtless is a neutral AI audit for disputes under £100K. Both sides' evidence, real case law, likely outcomes, realistic settlement ranges — in a single brief.
+            A neutral audit of your dispute. Upload what you've got, invite the other side, and both of you get the same brief — strongest points, weakest points, real case law, and a settlement band both sides could rationally accept. Before anyone spends £10K on lawyers.
           </p>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
@@ -199,34 +199,60 @@ const SplashPage = () => {
         </div>
       </section>
 
-      {/* WHAT IT DOES — 3 columns */}
+      {/* HOW IT WORKS — two-step mutual process */}
       <section style={section('#131314')}>
         <div style={inner}>
-          <div style={eyebrow}>What it does</div>
-          <h2 style={h2}>Three steps. About ten minutes.</h2>
+          <div style={eyebrow}>How it works</div>
+          <h2 style={h2}>A two-step mutual process.</h2>
           <p style={{ ...sub, marginBottom: '48px' }}>
-            Most disputes never need a judge — they need a neutral pressure test. Courtless is built to give you that, fast.
+            Courtless works best when both sides engage — that's how a dispute actually settles. You can start solo. The real leverage comes from bringing the other side in.
           </p>
 
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
             gap: '16px',
           }}>
             <StepCard
-              number="01"
-              title="Tell us your side"
-              body="Guided questions walk you through what happened. Upload contracts, emails, photos, invoices — drag-drop, keep it messy, we'll sort it. Takes about 10 minutes."
+              number="Step 1"
+              title="You submit. You get a private brief."
+              body={
+                <>
+                  Drop your contracts, emails, invoices, photos — whatever you've got. We read it and draft a brief that's yours alone:
+                  <ul style={{ margin: '10px 0 0 18px', padding: 0 }}>
+                    <li style={{ marginBottom: '4px' }}>Your strongest points and your weakest</li>
+                    <li style={{ marginBottom: '4px' }}>What the other side will likely argue</li>
+                    <li style={{ marginBottom: '4px' }}>Where your evidence is thin</li>
+                    <li>A specific, honest next step</li>
+                  </ul>
+                </>
+              }
             />
             <StepCard
-              number="02"
-              title="We analyse"
-              body="Your evidence is weighed against real UK case law. Game theory models the realistic range of outcomes. Both sides' likely arguments get mapped out."
+              number="Step 2"
+              title="Invite the other side. You both get a joint brief."
+              body={
+                <>
+                  When they submit their version, we generate a joint brief for both of you — <strong style={{ color: '#EBEBF5' }}>same text, same case law, same settlement band</strong>. That's where the real leverage comes from:
+                  <ul style={{ margin: '10px 0 0 18px', padding: 0 }}>
+                    <li style={{ marginBottom: '4px' }}>Real UK case law comparables</li>
+                    <li style={{ marginBottom: '4px' }}>BATNA/WATNA for each side</li>
+                    <li style={{ marginBottom: '4px' }}>A settlement band both parties could rationally accept</li>
+                    <li>A neutral "here's what a reasonable outcome looks like"</li>
+                  </ul>
+                </>
+              }
+              accent="#0A84FF"
             />
-            <StepCard
-              number="03"
-              title="Get a realistic take"
-              body="Your strongest and weakest points. What the other side would argue. Where your evidence is thin. A settlement band you can actually act on. A specific next step."
-            />
+          </div>
+
+          <div style={{
+            marginTop: '28px', padding: '16px 20px',
+            backgroundColor: 'rgba(10, 132, 255, 0.06)',
+            border: '1px solid rgba(10, 132, 255, 0.2)',
+            borderRadius: '10px',
+            fontSize: '13px', color: 'rgba(235, 235, 245, 0.7)', lineHeight: 1.6,
+          }}>
+            <strong style={{ color: '#EBEBF5' }}>If the other side declines or goes silent,</strong> you still get a one-sided audit with a steelman of what they'd most likely argue. The joint brief is the unlock — but you're never stuck waiting.
           </div>
         </div>
       </section>
@@ -405,26 +431,27 @@ const SplashPage = () => {
 
 // --- Sub-components ---
 
-const StepCard = ({ number, title, body }) => (
+const StepCard = ({ number, title, body, accent }) => (
   <div style={{
     backgroundColor: '#1A1A1C',
-    border: '1px solid rgba(235, 235, 245, 0.06)',
+    border: `1px solid ${accent ? `${accent}40` : 'rgba(235, 235, 245, 0.06)'}`,
     borderRadius: '12px',
     padding: '28px 24px',
   }}>
     <div style={{
-      fontFamily: serif, fontSize: '22px', fontWeight: 400,
-      color: 'rgba(235, 235, 245, 0.3)', letterSpacing: '-0.3px', marginBottom: '14px',
+      fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.4px',
+      color: accent || 'rgba(235, 235, 245, 0.4)',
+      fontWeight: 700, marginBottom: '14px',
     }}>
       {number}
     </div>
     <div style={{
-      fontFamily: serif, fontSize: '20px', fontWeight: 500,
-      color: '#EBEBF5', marginBottom: '12px', letterSpacing: '-0.3px',
+      fontFamily: serif, fontSize: '22px', fontWeight: 500,
+      color: '#EBEBF5', marginBottom: '14px', letterSpacing: '-0.3px', lineHeight: 1.25,
     }}>
       {title}
     </div>
-    <div style={{ fontSize: '14px', color: 'rgba(235, 235, 245, 0.68)', lineHeight: 1.65 }}>
+    <div style={{ fontSize: '14px', color: 'rgba(235, 235, 245, 0.72)', lineHeight: 1.65 }}>
       {body}
     </div>
   </div>
