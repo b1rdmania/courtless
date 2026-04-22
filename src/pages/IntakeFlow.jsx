@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const serif = 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
 
@@ -124,7 +125,7 @@ const IntakeFlow = () => {
         body.append('file_types', ev.upload_type);
         body.append('file_labels', ev.label);
       });
-      const res = await fetch('/api/disputes/prefill', { method: 'POST', body });
+      const res = await fetch(`${API_BASE}/api/disputes/prefill`, { method: 'POST', body });
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(`Pre-fill failed (${res.status}): ${txt || 'unknown error'}`);
@@ -199,7 +200,7 @@ const IntakeFlow = () => {
         });
       }
 
-      const res = await fetch('/api/disputes', { method: 'POST', body });
+      const res = await fetch(`${API_BASE}/api/disputes`, { method: 'POST', body });
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`Submission failed (${res.status}): ${errText || 'unknown error'}`);

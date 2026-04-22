@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const serif = 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
 
@@ -67,7 +68,7 @@ const BriefPage = ({ isDemo: isDemoProp = false }) => {
     let mounted = true;
     const load = async () => {
       try {
-        const endpoint = isDemo ? `/api/demo/${id}` : `/api/disputes/${id}`;
+        const endpoint = isDemo ? `${API_BASE}/api/demo/${id}` : `${API_BASE}/api/disputes/${id}`;
         const res = await fetch(endpoint);
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const j = await res.json();

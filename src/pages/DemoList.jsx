@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const serif = 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
 
@@ -29,7 +30,7 @@ const DemoList = () => {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch('/api/demo');
+        const res = await fetch(`${API_BASE}/api/demo`);
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const j = await res.json();
         if (mounted) {
