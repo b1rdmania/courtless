@@ -214,7 +214,7 @@ England & Wales only for V1.
 
 ## Related
 
-- [b1rdmania/counsel-mvp](https://github.com/b1rdmania/com/b1rdmania/counsel-mvp) — sister product **Bird Legal** (AI for law firms). Courtless ports the `BaseAgent` wrapper, case-law integration and game-theory prompt patterns from there.
+- [b1rdmania/counsel-mvp](https://github.com/b1rdmania/counsel-mvp) — sister product **Bird Legal** (AI for law firms). Courtless ports the `BaseAgent` wrapper, case-law integration and game-theory prompt patterns from there.
 - The dual-intake structure is conceptually lifted from the Gottman-method couples therapy protocol.
 
 ---
