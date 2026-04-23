@@ -137,13 +137,20 @@ const SplashPage = () => {
       {/* HERO */}
       <section style={section('transparent', 'clamp(64px, 10vh, 120px) clamp(20px, 4vw, 40px)')}>
         <div style={inner}>
-          <div style={eyebrow}>Disputes Without Courts</div>
+          <div style={eyebrow}>AI mediation for UK disputes under £100K</div>
           <h1 style={h1}>
-            Judge Judy. But with<br />
-            game theory and AI.
+            Two sides heard.<br />
+            One realistic take.
           </h1>
-          <p style={{ ...sub, marginBottom: '40px' }}>
-            A neutral audit of your dispute. Upload what you've got, invite the other side, and both of you get the same brief — strongest points, weakest points, real case law, and a settlement band both sides could rationally accept. Before anyone spends £10K on lawyers.
+          <p style={{ ...sub, marginBottom: '24px' }}>
+            Courtless is a structured AI mediation protocol. Both parties submit independently, we read everything — your versions, your contracts, your correspondence — and produce a neutral joint brief grounded in real UK case law and game theory. The kind of reality check that actually ends disputes.
+          </p>
+          <p style={{
+            fontSize: '14px', color: 'rgba(235, 235, 245, 0.55)',
+            lineHeight: 1.55, maxWidth: '640px', marginBottom: '40px',
+            fontStyle: 'italic',
+          }}>
+            Think Judge Judy — but mediative, not judgmental. With game theory and AI.
           </p>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
@@ -152,7 +159,7 @@ const SplashPage = () => {
               onMouseLeave={() => setCtaHover(false)}
               style={primaryCtaStyle(ctaHover)}
             >
-              Start your audit — free
+              Start a mediation — free
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
@@ -183,10 +190,10 @@ const SplashPage = () => {
             gap: '16px 40px', fontSize: '12px', color: 'rgba(235, 235, 245, 0.55)',
           }}>
             {[
-              'Neutral by design',
-              'Grounded in UK case law',
+              'Dual intake · both sides heard',
+              'Grounded in real UK case law',
               'Game-theoretic settlement bands',
-              'Not legal advice — a reality check',
+              'Mediation, not legal advice',
             ].map(t => (
               <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#32D74B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -199,46 +206,49 @@ const SplashPage = () => {
         </div>
       </section>
 
-      {/* HOW IT WORKS — two-step mutual process */}
+      {/* HOW IT WORKS — dual intake mediation protocol */}
       <section style={section('#131314')}>
         <div style={inner}>
           <div style={eyebrow}>How it works</div>
-          <h2 style={h2}>A two-step mutual process.</h2>
+          <h2 style={h2}>A structured mediation protocol. No mediator required.</h2>
           <p style={{ ...sub, marginBottom: '48px' }}>
-            Courtless works best when both sides engage — that's how a dispute actually settles. You can start solo. The real leverage comes from bringing the other side in.
+            Courtless is a three-stage async mediation. Both sides submit independently, the AI reads everything, and a neutral synthesis lands with both of you. Same brief, same settlement band, same citations. The protocol does the work a mediator's billable hour would do.
           </p>
 
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '16px',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '14px',
           }}>
             <StepCard
-              number="Step 1"
-              title="You submit. You get a private brief."
+              number="Stage 1 · Dual Intake"
+              title="Both sides submit. Independently."
               body={
                 <>
-                  Drop your contracts, emails, invoices, photos — whatever you've got. We read it and draft a brief that's yours alone:
-                  <ul style={{ margin: '10px 0 0 18px', padding: 0 }}>
-                    <li style={{ marginBottom: '4px' }}>Your strongest points and your weakest</li>
-                    <li style={{ marginBottom: '4px' }}>What the other side will likely argue</li>
-                    <li style={{ marginBottom: '4px' }}>Where your evidence is thin</li>
-                    <li>A specific, honest next step</li>
-                  </ul>
+                  Party A initiates and submits their version plus evidence. The other party gets an invite link — they submit separately, in their own time, never seeing what A submitted.
+                  <br /><br />
+                  Contracts, emails, invoices, message threads, photos. Whatever you've got. The AI reads every document, pulls the dates, flags what's contested.
                 </>
               }
             />
             <StepCard
-              number="Step 2"
-              title="Invite the other side. You both get a joint brief."
+              number="Stage 2 · Signal Extraction"
+              title="The AI reads both sides against the same evidence."
               body={
                 <>
-                  When they submit their version, we generate a joint brief for both of you — <strong style={{ color: '#EBEBF5' }}>same text, same case law, same settlement band</strong>. That's where the real leverage comes from:
-                  <ul style={{ margin: '10px 0 0 18px', padding: 0 }}>
-                    <li style={{ marginBottom: '4px' }}>Real UK case law comparables</li>
-                    <li style={{ marginBottom: '4px' }}>BATNA/WATNA for each side</li>
-                    <li style={{ marginBottom: '4px' }}>A settlement band both parties could rationally accept</li>
-                    <li>A neutral "here's what a reasonable outcome looks like"</li>
-                  </ul>
+                  Everything runs through a shared analysis: agreed facts, contested facts, evidence weight on each side, and what the actual paper trail supports.
+                  <br /><br />
+                  Case law comparables come from the National Archives — real UK judgments, real neutral citations. Game-theoretic model produces a BATNA/WATNA for each side.
+                </>
+              }
+            />
+            <StepCard
+              number="Stage 3 · Mediated Output"
+              title="Private briefs + one joint brief. Both sides get the same neutral take."
+              body={
+                <>
+                  Each side gets a <em>private</em> brief — their own strongest and weakest points, honest and unshared.
+                  <br /><br />
+                  Then a <strong style={{ color: '#EBEBF5' }}>joint brief</strong> goes to both of you — word for word identical — with the case law, the settlement band, and a specific recommended next step. Neutral by construction. That's where disputes actually end.
                 </>
               }
               accent="#0A84FF"
@@ -250,9 +260,53 @@ const SplashPage = () => {
             backgroundColor: 'rgba(10, 132, 255, 0.06)',
             border: '1px solid rgba(10, 132, 255, 0.2)',
             borderRadius: '10px',
-            fontSize: '13px', color: 'rgba(235, 235, 245, 0.7)', lineHeight: 1.6,
+            fontSize: '13px', color: 'rgba(235, 235, 245, 0.72)', lineHeight: 1.6,
           }}>
-            <strong style={{ color: '#EBEBF5' }}>If the other side declines or goes silent,</strong> you still get a one-sided audit with a steelman of what they'd most likely argue. The joint brief is the unlock — but you're never stuck waiting.
+            <strong style={{ color: '#EBEBF5' }}>If the other side declines or goes silent,</strong> we still deliver a one-sided audit for you — including a steelman of what they'd most likely argue. The joint brief is the unlock, but you're never stuck waiting on their consent to your own reality check.
+          </div>
+        </div>
+      </section>
+
+      {/* THE PROTOCOL — heritage + design principles */}
+      <section style={section('transparent')}>
+        <div style={inner}>
+          <div style={eyebrow}>The protocol</div>
+          <h2 style={h2}>Borrowed from couples therapy. Applied to disputes.</h2>
+          <div style={{ ...paragraph, maxWidth: '760px', marginTop: '24px' }}>
+            <p style={{ marginBottom: '16px' }}>
+              The structure comes from evidence-based couples therapy. Gottman-method intake separates the partners: each answers the same structured questions independently, and the exchange history (texts, voicemails, emails) is read as behavioural data. A neutral synthesis is produced that's anchored in what <em>both</em> people said, not just the loudest.
+            </p>
+            <p style={{ marginBottom: '16px' }}>
+              It turns out legal disputes have the same architecture. Two parties. Contested facts. A documentary trail of actual exchanges (contracts, emails, WhatsApps) that tells you what was agreed and when things went wrong. What's missing is the neutral analyst who reads both sides with the same cold eye.
+            </p>
+            <p style={{ marginBottom: '16px' }}>
+              That's Courtless. Dual intake, signal extraction from the real paper trail, synthesis into briefs — private and shared. The case-law grounding and game-theory layer are the legal-specific additions. The mediation backbone is lifted from a model that's been working in clinical practice for three decades.
+            </p>
+            <p>
+              And because it's asynchronous, neither party has to sit in the same room at the same time to get a read. Both of you submit in your own time. Both of you get the brief.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT'S NEXT — async agentic mediation */}
+      <section style={section('#131314')}>
+        <div style={inner}>
+          <div style={eyebrow}>What's coming next</div>
+          <h2 style={h2}>Phase 2: Mediated dialogue.</h2>
+          <p style={{ ...sub, marginBottom: '32px' }}>
+            Today Courtless reads both sides and produces a brief. Phase 2 turns that into a live, structured exchange.
+          </p>
+          <div style={{ ...paragraph, maxWidth: '760px' }}>
+            <p style={{ marginBottom: '16px' }}>
+              One party makes a proposal. The AI frames it for the other side, probes their response, and surfaces where you're converging and where you're not. Multiple rounds toward agreement — at the pace that works for both of you, without a human mediator's hourly rate or the need to be in the same room.
+            </p>
+            <p style={{ marginBottom: '16px' }}>
+              The protocol is the same. The AI stays neutral. It challenges weak positions on both sides, suggests compromises grounded in the case law, and moves the conversation toward a settlement that's realistic for the evidence at hand.
+            </p>
+            <p>
+              Think of today's joint brief as round zero. Phase 2 is rounds one through however-many-it-takes.
+            </p>
           </div>
         </div>
       </section>
@@ -271,10 +325,10 @@ const SplashPage = () => {
               Meanwhile, the other side is probably as unsure as you are. They think they're right. You think you're right. Nobody has read it back with a cold eye. And so things escalate — a WhatsApp goes unanswered, a formal letter gets sent, and suddenly everyone's paying for lawyers to say things everyone already knew.
             </p>
             <p style={{ marginBottom: '16px' }}>
-              Courtless sits in that gap. We read what you've actually got — your side, their likely side, your evidence — and tell you straight: where you're strong, where you're exposed, what a reasonable settlement looks like, and whether this is worth fighting at all.
+              Courtless sits in that gap, but not as a judge handing down verdicts. As a mediator. Both sides submit, separately. The AI reads what you've actually got — your versions, your contracts, the correspondence between you — and produces a neutral synthesis: where you agree, where you don't, what the case law says, and what a reasonable settlement would look like.
             </p>
             <p>
-              It's the sanity check you do <em>before</em> you escalate, not after. Judge Judy doesn't have binding authority either — that's not the point. The point is a neutral voice telling both sides the truth so they can stop paying to learn it.
+              It's the mediation you do <em>before</em> either side digs in. A real mediator charges £200-1000 an hour and needs both parties in the same room at the same time. Courtless runs asynchronously, costs nothing to start, and produces the same kind of neutral third-voice read. The point isn't enforcement. It's a shared, honest picture of what's actually reasonable — so you can stop paying to learn it.
             </p>
           </div>
         </div>
@@ -375,10 +429,11 @@ const SplashPage = () => {
         <div style={{ ...inner, textAlign: 'center' }}>
           <div style={eyebrow}>Ready?</div>
           <h2 style={{ ...h2, marginBottom: '20px' }}>
-            Get the real take on your dispute —<br />before you spend £10K on lawyers.
+            Start the mediation.<br />
+            Before anyone lawyers up.
           </h2>
           <p style={{ ...sub, margin: '0 auto 36px', textAlign: 'center' }}>
-            Free first audit. Ten minutes. No sign-up hoops. A brief in your inbox at the end.
+            Free first mediation. Ten minutes to submit. Invite the other party when you're ready. Both of you get the brief when they engage.
           </p>
           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
             <button
@@ -387,7 +442,7 @@ const SplashPage = () => {
               onMouseLeave={() => setFinalCtaHover(false)}
               style={primaryCtaStyle(finalCtaHover)}
             >
-              Start your audit
+              Start a mediation
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
