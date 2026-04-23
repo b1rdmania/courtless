@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { getDemoBrief } from '../data/demoBriefs.js';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 const fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -65,10 +66,24 @@ const BriefPage = ({ isDemo: isDemoProp = false }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
+    // Demo briefs are baked into the frontend — no backend round-trip, no cold start.
+    if (isDemo) {
+      const demo = getDemoBrief(id);
+      if (demo) {
+        setData(demo);
+        setLoading(false);
+      } else {
+        setError('Demo not found');
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Real disputes still hit the backend
     let mounted = true;
     const load = async () => {
       try {
-        const endpoint = isDemo ? `${API_BASE}/api/demo/${id}` : `${API_BASE}/api/disputes/${id}`;
+        const endpoint = `${API_BASE}/api/disputes/${id}`;
         const res = await fetch(endpoint);
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const j = await res.json();

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DEMO_LIST } from '../data/demoBriefs.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
 const fontFamily = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const serif = 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif';
 
@@ -22,30 +22,10 @@ const containerStyle = {
 
 const DemoList = () => {
   const navigate = useNavigate();
-  const [demos, setDemos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/demo`);
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-        const j = await res.json();
-        if (mounted) {
-          setDemos(j.demos || []);
-          setLoading(false);
-        }
-      } catch (e) {
-        if (mounted) {
-          setError(e.message || String(e));
-          setLoading(false);
-        }
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
+  // Demo content is baked into the frontend bundle — instant load, no backend round-trip.
+  const demos = DEMO_LIST;
+  const loading = false;
+  const error = null;
 
   return (
     <div style={shellStyle}>
