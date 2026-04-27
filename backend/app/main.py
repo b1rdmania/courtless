@@ -2,10 +2,15 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
+from .config import CORS_ORIGINS
 from .database import init_db
+from .limiter import limiter
 from .routers import demo, disputes
 from .services.seed import seed_demos
 
@@ -23,12 +28,26 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Rate limiting — slowapi reads `request.app.state.limiter` from each request.
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again in a minute."},
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-Owner-Token"],
 )
 
 app.include_router(disputes.router)

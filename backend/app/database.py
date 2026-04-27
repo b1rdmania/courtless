@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS disputes (
     dispute_type TEXT DEFAULT 'general',
     amount_in_dispute REAL,
     status TEXT NOT NULL DEFAULT 'submitted',
+    owner_token TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -88,5 +89,11 @@ async def get_db() -> aiosqlite.Connection:
 async def init_db():
     db = await get_db()
     await db.executescript(SCHEMA)
+    # Defensive migration: existing rows in pre-token databases need the column added.
+    # CREATE TABLE IF NOT EXISTS won't add columns to an existing table.
+    cursor = await db.execute("PRAGMA table_info(disputes)")
+    cols = {row["name"] for row in await cursor.fetchall()}
+    if "owner_token" not in cols:
+        await db.execute("ALTER TABLE disputes ADD COLUMN owner_token TEXT")
     await db.commit()
     await db.close()

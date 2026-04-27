@@ -6,18 +6,29 @@ Also exposes the document-first intake prefill endpoint:
 """
 
 import json
+import secrets
 import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, Header, HTTPException, Request, UploadFile
+from pydantic import ValidationError
 
 from ..agents.auditor import IndividualAuditor
 from ..agents.intake_helper import EvidenceIntakeHelper
-from ..config import UPLOAD_DIR
+from ..config import (
+    RATE_LIMIT_PREFILL,
+    RATE_LIMIT_READ,
+    RATE_LIMIT_SUBMIT,
+    UPLOAD_DIR,
+)
 from ..database import get_db
+from ..limiter import limiter
+from ..models import IntakeFields
 from ..services.parser import extract_text
+from ..services.validation import validate_and_read, validate_file_count
 
 
 router = APIRouter()
@@ -48,21 +59,21 @@ async def _save_pending_files_async(
     file_types: list[str],
     file_labels: list[str],
 ) -> list[dict]:
-    """Write uploaded files + extracted text into the pending dir.
+    """Write validated uploads + extracted text into the pending dir.
 
-    Returns a list of records with filename, upload_type, label, extracted_text.
-    Also writes a sidecar JSON so the final-submit step can rehydrate without re-reading.
+    Each file is run through validate_and_read first, which enforces the
+    extension allowlist and per-file size cap. Caller is responsible for
+    enforcing MAX_FILES via validate_file_count().
     """
     out_dir = _pending_dir(pending_id)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     records: list[dict] = []
-    for idx, upload in enumerate(files or []):
-        if upload is None or not upload.filename:
-            continue
-        safe_name = Path(upload.filename).name
+    for idx, upload in enumerate(files):
+        safe_name = Path(upload.filename or "").name
+        content_bytes = await validate_and_read(upload)
+
         dest = out_dir / safe_name
-        content_bytes = await upload.read()
         dest.write_bytes(content_bytes)
 
         upload_type = (file_types[idx] if idx < len(file_types) else "other") or "other"
@@ -89,7 +100,13 @@ async def _save_pending_files_async(
 
 
 def _load_pending_records(pending_id: str) -> list[dict]:
-    """Rehydrate pending records from the sidecar JSON. Raises if not found."""
+    """Rehydrate pending records. Validate the id is a UUID first to avoid
+    path-traversal via crafted pending_id values."""
+    try:
+        uuid.UUID(pending_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid pending_id")
+
     sidecar = _pending_sidecar(pending_id)
     if not sidecar.exists():
         raise HTTPException(status_code=404, detail="pending_id not found or expired")
@@ -101,7 +118,6 @@ def _load_pending_records(pending_id: str) -> list[dict]:
 
 
 def _cleanup_pending(pending_id: str) -> None:
-    """Best-effort removal of the pending dir once it's been consumed."""
     try:
         shutil.rmtree(_pending_dir(pending_id), ignore_errors=True)
     except Exception:
@@ -113,34 +129,35 @@ def _cleanup_pending(pending_id: str) -> None:
 # ---------------------------------------------------------------------------
 
 @router.post("/api/disputes/prefill")
+@limiter.limit(RATE_LIMIT_PREFILL)
 async def prefill_dispute(
+    request: Request,
     files: list[UploadFile] = File(default=[]),
     file_types: list[str] = Form(default=[]),
     file_labels: list[str] = Form(default=[]),
 ):
-    """Stage uploads, extract text, run EvidenceIntakeHelper, return a pre-filled draft.
-
-    Does NOT create a dispute record. The client passes `pending_id` back to
-    POST /api/disputes when finalising. Pending uploads live under
-    UPLOAD_DIR/pending/<pending_id>/ (TODO: 24h cleanup job).
-    """
-    if not files:
+    real_files = validate_file_count(files)
+    if not real_files:
         raise HTTPException(status_code=400, detail="At least one file is required")
 
     pending_id = str(uuid.uuid4())
-    records = await _save_pending_files_async(pending_id, files, file_types, file_labels)
+    try:
+        records = await _save_pending_files_async(
+            pending_id, real_files, file_types, file_labels
+        )
+    except HTTPException:
+        _cleanup_pending(pending_id)
+        raise
     if not records:
         _cleanup_pending(pending_id)
         raise HTTPException(status_code=400, detail="No readable files were uploaded")
 
-    # Run the intake helper agent
     agent_input = {"evidence": records}
     agent = EvidenceIntakeHelper()
     try:
         result = await agent.execute(agent_input, dispute_id=pending_id)
         draft = result.data or {}
     except Exception as e:
-        # Keep the pending dir so the user can still submit manually, but return a minimal draft
         draft = {
             "suggested_title": "",
             "suggested_other_party_name": "",
@@ -169,7 +186,9 @@ async def prefill_dispute(
 # ---------------------------------------------------------------------------
 
 @router.post("/api/disputes")
+@limiter.limit(RATE_LIMIT_SUBMIT)
 async def create_dispute(
+    request: Request,
     title: str = Form(...),
     amount: float = Form(0),
     other_party_name: str = Form(""),
@@ -185,53 +204,84 @@ async def create_dispute(
     file_types: list[str] = Form(default=[]),
     file_labels: list[str] = Form(default=[]),
 ):
+    # Validate intake fields against the Pydantic schema. Done after Form
+    # parsing because FastAPI can't combine Form() + a single Pydantic body.
+    try:
+        intake = IntakeFields(
+            title=title,
+            amount=amount,
+            other_party_name=other_party_name,
+            problem_started=problem_started,
+            dispute_description=dispute_description,
+            desired_outcome=desired_outcome,
+            previous_attempts=previous_attempts,
+            own_responsibility=own_responsibility,
+            steelman_hint=steelman_hint,
+            email=email or None,
+        )
+    except ValidationError as e:
+        # Pydantic v2's e.errors() includes the underlying exception object,
+        # which isn't JSON serialisable. Strip it down to (loc, msg) pairs.
+        raise HTTPException(
+            status_code=422,
+            detail=[
+                {"loc": list(err.get("loc", [])), "msg": err.get("msg", "")}
+                for err in e.errors()
+            ],
+        )
+
     dispute_id = str(uuid.uuid4())
     party_id = str(uuid.uuid4())
     intake_id = str(uuid.uuid4())
+    owner_token = secrets.token_urlsafe(32)
     now = _now()
 
-    # Resolve evidence source: prefer pending_id if present (new flow), else fresh uploads.
     pending_records: list[dict] = []
     if pending_id:
         pending_records = _load_pending_records(pending_id)
+    else:
+        # If pending_id wasn't supplied, the client is sending fresh uploads —
+        # enforce the file-count cap now (per-file caps applied below).
+        files = validate_file_count(files)
 
     db = await get_db()
     try:
-        # 1. Create dispute
         await db.execute(
-            """INSERT INTO disputes (id, title, dispute_type, amount_in_dispute, status, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (dispute_id, title, "general", amount or 0, "submitted", now, now),
+            """INSERT INTO disputes
+               (id, title, dispute_type, amount_in_dispute, status,
+                owner_token, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (dispute_id, intake.title, "general", intake.amount or 0,
+             "submitted", owner_token, now, now),
         )
 
-        # 2. Create initiator party
         await db.execute(
             """INSERT INTO parties (id, dispute_id, role, email, submitted_at)
                VALUES (?, ?, ?, ?, ?)""",
-            (party_id, dispute_id, "initiator", email or None, now),
+            (party_id, dispute_id, "initiator",
+             str(intake.email) if intake.email else None, now),
         )
 
-        # 3. Create intake
         await db.execute(
             """INSERT INTO intakes
                (id, party_id, problem_started, other_party_name, dispute_description,
                 desired_outcome, previous_attempts, own_responsibility, steelman_hint, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                intake_id, party_id, problem_started or None, other_party_name or None,
-                dispute_description, desired_outcome or None, previous_attempts or None,
-                own_responsibility or "none", steelman_hint or None, now,
+                intake_id, party_id, intake.problem_started or None,
+                intake.other_party_name or None,
+                intake.dispute_description, intake.desired_outcome or None,
+                intake.previous_attempts or None,
+                intake.own_responsibility, intake.steelman_hint or None, now,
             ),
         )
 
-        # 4. Attach evidence — either from pending dir or from fresh uploads
         dispute_upload_dir = UPLOAD_DIR / dispute_id
         dispute_upload_dir.mkdir(parents=True, exist_ok=True)
 
         evidence_records: list[dict] = []
 
         if pending_records:
-            # Move files from pending dir into the real dispute dir
             for rec in pending_records:
                 safe_name = rec["filename"]
                 src = Path(rec["stored_path"])
@@ -240,7 +290,6 @@ async def create_dispute(
                     if src.exists():
                         shutil.move(str(src), str(dest))
                     else:
-                        # Sidecar references a missing file — skip rather than fail
                         continue
                 except Exception:
                     continue
@@ -263,12 +312,10 @@ async def create_dispute(
                     "extracted_text": extracted,
                 })
         else:
-            for idx, upload in enumerate(files or []):
-                if upload is None or not upload.filename:
-                    continue
-                safe_name = Path(upload.filename).name
+            for idx, upload in enumerate(files):
+                safe_name = Path(upload.filename or "").name
+                content = await validate_and_read(upload)
                 dest = dispute_upload_dir / safe_name
-                content = await upload.read()
                 dest.write_bytes(content)
 
                 upload_type = (file_types[idx] if idx < len(file_types) else "other") or "other"
@@ -294,7 +341,6 @@ async def create_dispute(
                     "extracted_text": extracted,
                 })
 
-        # 5. Set status to analysing
         await db.execute(
             "UPDATE disputes SET status = ?, updated_at = ? WHERE id = ?",
             ("analysing", _now(), dispute_id),
@@ -303,21 +349,19 @@ async def create_dispute(
     finally:
         await db.close()
 
-    # Clean up the pending dir once files have been moved
     if pending_id:
         _cleanup_pending(pending_id)
 
-    # 6. Run the audit (synchronous for MVP)
     agent_input = {
-        "title": title,
-        "amount": amount,
-        "other_party_name": other_party_name,
-        "problem_started": problem_started,
-        "dispute_description": dispute_description,
-        "desired_outcome": desired_outcome,
-        "previous_attempts": previous_attempts,
-        "own_responsibility": own_responsibility,
-        "steelman_hint": steelman_hint,
+        "title": intake.title,
+        "amount": intake.amount,
+        "other_party_name": intake.other_party_name,
+        "problem_started": intake.problem_started,
+        "dispute_description": intake.dispute_description,
+        "desired_outcome": intake.desired_outcome,
+        "previous_attempts": intake.previous_attempts,
+        "own_responsibility": intake.own_responsibility,
+        "steelman_hint": intake.steelman_hint,
         "evidence": evidence_records,
     }
 
@@ -336,7 +380,6 @@ async def create_dispute(
             await db.close()
         raise HTTPException(status_code=500, detail=f"Audit failed: {e}")
 
-    # 7. Store brief and flip status
     brief_id = str(uuid.uuid4())
     db = await get_db()
     try:
@@ -353,17 +396,50 @@ async def create_dispute(
     finally:
         await db.close()
 
-    return {"dispute_id": dispute_id, "status": "brief_ready"}
+    return {
+        "dispute_id": dispute_id,
+        "owner_token": owner_token,
+        "status": "brief_ready",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Read endpoint — token-gated so a guessed UUID can't leak someone's brief
+# ---------------------------------------------------------------------------
+
+def _check_owner_token(stored: Optional[str], provided: Optional[str]) -> None:
+    """Constant-time comparison; both must be present and equal.
+
+    A pre-token row (stored is None) is treated as ungated for backward compat
+    with anything seeded before the migration. New writes always set a token.
+    """
+    if stored is None:
+        return
+    if not provided or not secrets.compare_digest(stored, provided):
+        raise HTTPException(status_code=403, detail="Missing or invalid owner token.")
 
 
 @router.get("/api/disputes/{dispute_id}")
-async def get_dispute(dispute_id: str):
+@limiter.limit(RATE_LIMIT_READ)
+async def get_dispute(
+    dispute_id: str,
+    request: Request,
+    x_owner_token: Optional[str] = Header(default=None, alias="X-Owner-Token"),
+    token: Optional[str] = None,
+):
+    try:
+        uuid.UUID(dispute_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid dispute id")
+
     db = await get_db()
     try:
         cursor = await db.execute("SELECT * FROM disputes WHERE id = ?", (dispute_id,))
         dispute_row = await cursor.fetchone()
         if not dispute_row:
             raise HTTPException(status_code=404, detail="Dispute not found")
+
+        _check_owner_token(dispute_row["owner_token"], x_owner_token or token)
 
         cursor = await db.execute(
             """SELECT * FROM briefs

@@ -4,11 +4,64 @@ from .base import BaseAgent
 from ..config import AUDITOR_MODEL, AUDITOR_TIMEOUT
 
 
+_POINT_ITEM = {
+    "type": "object",
+    "properties": {
+        "point": {"type": "string"},
+        "reasoning": {"type": "string"},
+    },
+    "required": ["point", "reasoning"],
+    "additionalProperties": False,
+}
+
+_GAP_ITEM = {
+    "type": "object",
+    "properties": {
+        "claim": {"type": "string"},
+        "gap": {"type": "string"},
+    },
+    "required": ["claim", "gap"],
+    "additionalProperties": False,
+}
+
+
 class IndividualAuditor(BaseAgent):
     agent_id = "individual_auditor"
     model = AUDITOR_MODEL
     timeout = AUDITOR_TIMEOUT
     max_tokens = 4096
+
+    output_tool_name = "submit_private_brief"
+    output_tool_description = (
+        "Submit the structured private brief for the party. Always call this "
+        "tool exactly once with the complete brief."
+    )
+
+    def output_schema(self) -> dict:
+        return {
+            "type": "object",
+            "properties": {
+                "summary": {"type": "string"},
+                "strongest_points": {"type": "array", "items": _POINT_ITEM},
+                "weakest_points": {"type": "array", "items": _POINT_ITEM},
+                "evidence_gaps": {"type": "array", "items": _GAP_ITEM},
+                "opposing_argument": {"type": "string"},
+                "case_law_note": {"type": "string"},
+                "recommended_next_step": {"type": "string"},
+                "honest_take": {"type": "string"},
+            },
+            "required": [
+                "summary",
+                "strongest_points",
+                "weakest_points",
+                "evidence_gaps",
+                "opposing_argument",
+                "case_law_note",
+                "recommended_next_step",
+                "honest_take",
+            ],
+            "additionalProperties": False,
+        }
 
     def build_system_prompt(self) -> str:
         return """You are a retired English county court judge with 25 years of experience reading disputes.
@@ -27,23 +80,15 @@ Tone: plain English, direct, warm but unflinching. No legal jargon unless essent
 
 This is NOT legal advice. You are not acting as their solicitor. You are giving them a realistic pre-legal take so they can decide what to do.
 
-Return ONLY valid JSON with this shape:
-{
-  "summary": "2-3 paragraphs of plain English overview of the dispute and your overall take",
-  "strongest_points": [
-    {"point": "The core claim, stated clearly", "reasoning": "Why this holds up — cite what they said or their evidence"}
-  ],
-  "weakest_points": [
-    {"point": "Where they're exposed", "reasoning": "Why this is a problem"}
-  ],
-  "evidence_gaps": [
-    {"claim": "What they asserted", "gap": "What's missing to prove it"}
-  ],
-  "opposing_argument": "2-3 paragraphs steelmanning what the other party would likely say. Be generous. If you were defending them, how would you frame this?",
-  "case_law_note": "1-2 sentences — for MVP, just say 'Case law analysis will be included in the joint brief once the other party submits their side.'",
-  "recommended_next_step": "2-3 paragraphs of specific, practical advice. Settlement range if appropriate. Whether to mediate, negotiate directly, write a letter before action, or just walk away.",
-  "honest_take": "One brutal-but-kind sentence summing up their situation. E.g. 'Your paper trail is strong and you should write to them formally before escalating.' or 'You have a moral case but a weak legal one — settle for 40-60% if you can get it.'"
-}"""
+Field guide for the brief you submit:
+- summary: 2-3 paragraphs of plain-English overview of the dispute and your overall take.
+- strongest_points: each {point, reasoning} — the core claim plus why it holds up, citing what they said or their evidence.
+- weakest_points: each {point, reasoning} — where they're exposed and why it's a problem.
+- evidence_gaps: each {claim, gap} — what they asserted vs. what's missing to prove it.
+- opposing_argument: 2-3 paragraphs steelmanning the other party. Be generous.
+- case_law_note: 1-2 sentences. For MVP, say "Case law analysis will be included in the joint brief once the other party submits their side."
+- recommended_next_step: 2-3 paragraphs of specific, practical advice. Settlement range if appropriate. Whether to mediate, negotiate directly, write a letter before action, or walk away.
+- honest_take: one brutal-but-kind sentence summing up their situation."""
 
     def build_user_prompt(self, input_data: dict) -> str:
         evidence_items = input_data.get("evidence", [])
@@ -80,4 +125,4 @@ WHAT THEY ADMIT THE OTHER SIDE MIGHT SAY: {input_data.get('steelman_hint') or 'n
 EVIDENCE SUBMITTED ({len(evidence_items)} items):
 {evidence_block}
 
-Produce the private brief JSON now."""
+Call submit_private_brief with the complete brief now."""
