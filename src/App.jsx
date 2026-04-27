@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import SplashPage from './pages/SplashPage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
 import IntakeFlow from './pages/IntakeFlow.jsx';
 import BriefPage from './pages/BriefPage.jsx';
 import DemoList from './pages/DemoList.jsx';
@@ -30,6 +31,7 @@ const App = () => {
   return (
     <Routes>
       <Route path="/" element={<SplashPage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="/start" element={<AppShell><IntakeFlow /></AppShell>} />
       <Route path="/brief/:disputeId" element={<AppShell><BriefPage /></AppShell>} />
       {/* Demo routes skip AppShell's mobile gate — they're deliberately shareable
