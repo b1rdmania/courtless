@@ -1,0 +1,30 @@
+app = "courtless-api"
+primary_region = "lhr"
+
+[env]
+  DB_PATH = "/data/courtless.db"
+  UPLOAD_DIR = "/data/uploads"
+  COURTLESS_CORS_ORIGINS = "https://courtless.xyz,https://www.courtless.xyz"
+
+[mounts]
+  source = "courtless_data"
+  destination = "/data"
+  initial_size = "1gb"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
